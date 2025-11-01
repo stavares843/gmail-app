@@ -5,7 +5,7 @@ FROM node:20.18.0-slim AS base
 WORKDIR /app
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
-RUN corepack enable
+RUN npm install -g pnpm@9.11.0
 
 # Install Playwright dependencies (for unsubscribe automation)
 RUN apt-get update && apt-get install -y \
@@ -69,7 +69,9 @@ RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --prod --frozen-l
 COPY --from=build /app/apps/api/dist ./apps/api/dist
 COPY --from=build /app/packages/db/dist ./packages/db/dist
 COPY --from=build /app/packages/db/prisma ./packages/db/prisma
-COPY --from=build /app/node_modules/.prisma ./node_modules/.prisma
+
+# Install Prisma CLI globally and generate client
+RUN npm install -g prisma@5.19.1 && cd packages/db && prisma generate
 
 # Install Playwright Chromium in production
 RUN cd apps/api && pnpm exec playwright install --with-deps chromium
