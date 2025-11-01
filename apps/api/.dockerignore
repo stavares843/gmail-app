@@ -1,0 +1,47 @@
+# Node modules
+node_modules/
+**/node_modules/
+
+# Build outputs
+dist/
+build/
+.next/
+**/dist/
+**/.next/
+
+# Test files
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx
+**/vitest.config.ts
+**/vitest.setup.ts
+
+# Config files not needed at runtime
+tsconfig.tsbuildinfo
+**/*.tsbuildinfo
+
+# Development files
+.git/
+.gitignore
+.vscode/
+.qodo/
+*.md
+README.md
+
+# Environment files (will be set via Fly secrets)
+.env
+.env.*
+!.env.example
+
+# Logs
+logs/
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+tmp/
+temp/
