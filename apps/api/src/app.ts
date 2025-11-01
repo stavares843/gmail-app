@@ -64,7 +64,9 @@ passport.use(new GoogleStrategy({
     'profile',
     'email',
     'https://www.googleapis.com/auth/gmail.modify',
-    'https://www.googleapis.com/auth/gmail.readonly'
+    'https://www.googleapis.com/auth/gmail.readonly',
+    // Needed to send unsubscribe emails for mailto: List-Unsubscribe
+    'https://www.googleapis.com/auth/gmail.send'
   ],
   passReqToCallback: true
 }, async (req, accessToken, refreshToken, params, profile, done) => {

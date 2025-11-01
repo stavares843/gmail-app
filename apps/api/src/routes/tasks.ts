@@ -453,48 +453,95 @@ router.post('/unsubscribe', async (req: any, res) => {
     
     try {
       // Simple immediate processing for MVP (no queue)
-      const { chromium } = await import('playwright');
-      const browser = await chromium.launch({ headless: true });
-      const context = await browser.newContext();
-      const page = await context.newPage();
-      
+      // 1) Try mailto: based unsubscribe by sending an email
       let success = false;
-      for (const url of email.unsubscribeUrls) {
-        if (url.startsWith('mailto:')) continue; // Skip mailto links for MVP
-        
+      const mailtoUrls = email.unsubscribeUrls.filter(u => u.toLowerCase().startsWith('mailto:'));
+      const httpUrls = email.unsubscribeUrls.filter(u => /^https?:\/\//i.test(u));
+
+      // Helper to parse mailto url per RFC6068
+      function parseMailto(u: string): { to: string; subject?: string; body?: string } | null {
         try {
-          await page.goto(url, { waitUntil: 'networkidle', timeout: 15000 });
-          
-          // Heuristics: look for unsubscribe/opt-out buttons
-          const selectors = [
-            'button:has-text("unsubscribe")',
-            'button:has-text("opt out")',
-            'a:has-text("unsubscribe")',
-            'a:has-text("opt out")',
-            'input[type="submit"]:has-text("unsubscribe")',
-            'button:has-text("confirm")',
-            'button:has-text("yes")'
-          ];
-          
-          for (const selector of selectors) {
-            try {
-              const element = await page.locator(selector).first();
-              if (await element.isVisible({ timeout: 2000 })) {
-                await element.click();
-                await page.waitForTimeout(2000); // Wait for action to complete
-                success = true;
-                break;
-              }
-            } catch {}
-          }
-          
-          if (success) break;
-        } catch (e: any) {
-          console.error(`Failed to process ${url}:`, e.message);
+          const raw = u.replace(/^mailto:/i, '');
+          const [addrPart, queryPart] = raw.split('?');
+          const to = decodeURIComponent(addrPart || '').trim();
+          const params = new URLSearchParams(queryPart || '');
+          const subject = params.get('subject') ? decodeURIComponent(params.get('subject') as string) : undefined;
+          const body = params.get('body') ? decodeURIComponent(params.get('body') as string) : undefined;
+          if (!to) return null;
+          return { to, subject, body };
+        } catch {
+          return null;
         }
       }
-      
-      await browser.close();
+
+      if (mailtoUrls.length > 0) {
+        try {
+          const gmail = await getGmailClient(email.accountId);
+          for (const murl of mailtoUrls) {
+            const parsed = parseMailto(murl);
+            if (!parsed) continue;
+            const to = parsed.to;
+            const subject = parsed.subject || 'unsubscribe';
+            const body = parsed.body || '';
+            const message = [
+              `To: ${to}`,
+              `Subject: ${subject}`,
+              'MIME-Version: 1.0',
+              'Content-Type: text/plain; charset=UTF-8',
+              '',
+              body
+            ].join('\r\n');
+            const raw = Buffer.from(message).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+            await gmail.users.messages.send({ userId: 'me', requestBody: { raw } });
+            success = true;
+            break;
+          }
+        } catch (e: any) {
+          console.error('Failed to send mailto unsubscribe:', e.message);
+        }
+      }
+
+      // 2) If not successful via mailto, try HTTP-based flows with Playwright automation
+      if (!success && httpUrls.length > 0) {
+        const { chromium } = await import('playwright');
+        const browser = await chromium.launch({ headless: true });
+        const context = await browser.newContext();
+        const page = await context.newPage();
+
+        for (const url of httpUrls) {
+          try {
+            await page.goto(url, { waitUntil: 'networkidle', timeout: 15000 });
+
+            // Heuristics: look for unsubscribe/opt-out buttons/links
+            const selectors = [
+              'button:has-text("unsubscribe")',
+              'button:has-text("opt out")',
+              'a:has-text("unsubscribe")',
+              'a:has-text("opt out")',
+              'input[type="submit"]:has-text("unsubscribe")',
+              'button:has-text("confirm")',
+              'button:has-text("yes")'
+            ];
+
+            for (const selector of selectors) {
+              try {
+                const element = await page.locator(selector).first();
+                if (await element.isVisible({ timeout: 2000 })) {
+                  await element.click();
+                  await page.waitForTimeout(2000);
+                  success = true;
+                  break;
+                }
+              } catch {}
+            }
+
+            if (success) break;
+          } catch (e: any) {
+            console.error(`Failed to process ${url}:`, e.message);
+          }
+        }
+        await browser.close();
+      }
       
       await prisma.email.update({
         where: { id: email.id },
