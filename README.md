@@ -431,4 +431,3 @@ MIT
 
 - Gmail scopes require OAuth consent approval; add test users in Google Cloud Console
 - Unsubscribe automation success rate depends on website structure and heuristics
-- For production, consider rate limiting, error monitoring (Sentry), and DB backups
