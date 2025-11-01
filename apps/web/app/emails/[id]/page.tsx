@@ -4,7 +4,12 @@ import axios from 'axios';
 
 export default function EmailPage({ params }: any) {
   const [email, setEmail] = useState<any>(null);
-  const API = process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || 'http://localhost:4000';
+  const API =
+    process.env.NEXT_PUBLIC_API_URL ||
+    process.env.API_URL ||
+    (process.env.NODE_ENV === 'production'
+      ? 'https://gmail-app-w-sq-g.fly.dev'
+      : 'http://localhost:4000');
   useEffect(() => {
     axios.get(`${API}/emails/${params.id}`, { withCredentials: true }).then(r => setEmail(r.data.email));
   }, [params.id]);

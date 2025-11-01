@@ -29,7 +29,12 @@ export default function Dashboard() {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [selectedAccountId, setSelectedAccountId] = useState<string | 'all'>('all');
 
-  const API = process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || 'http://localhost:4000';
+  const API =
+    process.env.NEXT_PUBLIC_API_URL ||
+    process.env.API_URL ||
+    (process.env.NODE_ENV === 'production'
+      ? 'https://gmail-app-w-sq-g.fly.dev'
+      : 'http://localhost:4000');
 
   useEffect(() => {
     axios.get(`${API}/auth/me`, { withCredentials: true })

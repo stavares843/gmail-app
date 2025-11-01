@@ -1,5 +1,10 @@
 export default function Home() {
-  const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+  const API =
+    process.env.NEXT_PUBLIC_API_URL ||
+    process.env.API_URL ||
+    (process.env.NODE_ENV === 'production'
+      ? 'https://gmail-app-w-sq-g.fly.dev'
+      : 'http://localhost:4000');
   
   return (
     <main className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
