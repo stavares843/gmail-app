@@ -7,6 +7,9 @@ primary_region = "sjc"
 [build]
   dockerfile = "apps/api/Dockerfile"
 
+[deploy]
+  release_command = "cd /app/packages/db && npx prisma migrate deploy"
+
 [env]
   PORT = "4000"
   NODE_ENV = "production"
