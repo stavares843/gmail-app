@@ -1,0 +1,24 @@
+{
+  "name": "@pkg/db",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "prisma": "prisma"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.19.1",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "prisma": "^5.19.1",
+    "typescript": "^5.6.3"
+  }
+}

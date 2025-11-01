@@ -1,0 +1,33 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Build API and Web",
+			"type": "shell",
+			"command": "pnpm --filter @app/api build && pnpm --filter @app/web build",
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Build Web",
+			"type": "shell",
+			"command": "pnpm --filter @app/web build",
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Build API",
+			"type": "shell",
+			"command": "pnpm --filter @app/api build",
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Build Web after unsubscribe UI change",
+			"type": "shell",
+			"command": "pnpm --filter @app/web build",
+			"problemMatcher": [],
+			"group": "build"
+		}
+	]
+}

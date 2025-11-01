@@ -1,0 +1,19 @@
+{
+  "name": "gmail-ai-sorting-app",
+  "private": true,
+  "packageManager": "pnpm@9.11.0",
+  "scripts": {
+    "dev": "pnpm -w -r run dev",
+    "build": "pnpm -w -r run build",
+    "start:api": "pnpm --filter @app/api start",
+    "db:generate": "pnpm --filter @pkg/db prisma generate",
+    "db:push": "pnpm --filter @pkg/db prisma db push"
+  },
+  "devDependencies": {
+    "turbo": "^2.1.1"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ]
+}

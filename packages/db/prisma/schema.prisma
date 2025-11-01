@@ -1,0 +1,97 @@
+// Prisma schema for Gmail AI sorting app
+// Postgres provider
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  name          String?
+  image         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  accounts      Account[]
+  categories    Category[]
+  emails        Email[]
+}
+
+model Account {
+  id                 String   @id @default(cuid())
+  user               User     @relation(fields: [userId], references: [id])
+  userId             String
+  provider           String
+  providerAccountId  String
+  accessToken        String
+  refreshToken       String
+  scope              String?
+  tokenExpiresAt     DateTime?
+  emailAddress       String
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  emails             Email[]
+  ingestCursors      IngestCursor[]
+
+  @@unique([provider, providerAccountId])
+}
+
+model Category {
+  id          String   @id @default(cuid())
+  user        User     @relation(fields: [userId], references: [id])
+  userId      String
+  name        String
+  description String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  emails      Email[]
+
+  @@unique([userId, name])
+}
+
+model Email {
+  id            String   @id @default(cuid())
+  user          User     @relation(fields: [userId], references: [id])
+  userId        String
+  account       Account  @relation(fields: [accountId], references: [id])
+  accountId     String
+  gmailId       String   // Gmail message ID
+  threadId      String
+  subject       String?
+  fromAddress   String?
+  toAddress     String?
+  receivedAt    DateTime
+  snippet       String?
+  rawBody       String?
+  htmlBody      String?
+  unsubscribeUrls String[] @db.Text
+  category      Category? @relation(fields: [categoryId], references: [id])
+  categoryId    String?
+  aiCategory    String?   // AI chosen category name at time of ingest
+  aiSummary     String?
+  archived      Boolean   @default(false)
+  deleted       Boolean   @default(false)
+  unsubscribedAt DateTime?
+  unsubscribeStatus String?  // success, failed, pending
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@unique([accountId, gmailId])
+}
+
+model IngestCursor {
+  id            String   @id @default(cuid())
+  account       Account  @relation(fields: [accountId], references: [id])
+  accountId     String
+  historyId     String?  // For Gmail history API incremental fetch
+  lastCheckedAt DateTime @default(now())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([accountId])
+}
