@@ -1,7 +1,7 @@
 /**** @type {import('next').NextConfig} */
 const nextConfig = {
   experimental: { serverActions: { bodySizeLimit: '5mb' } },
-  output: 'standalone',
+  // Remove 'standalone' for Vercel deployment - Vercel handles optimization
   env: {
     API_URL: process.env.API_URL || 'http://localhost:4000'
   }
