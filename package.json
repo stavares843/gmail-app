@@ -6,6 +6,7 @@
     "dev": "pnpm -w -r run dev",
     "build": "pnpm -w -r run build",
     "start:api": "pnpm --filter @app/api start",
+    "test": "pnpm -w -r --parallel run test",
     "db:generate": "pnpm --filter @pkg/db prisma generate",
     "db:push": "pnpm --filter @pkg/db prisma db push"
   },

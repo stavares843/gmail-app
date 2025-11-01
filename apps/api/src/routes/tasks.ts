@@ -7,7 +7,7 @@ const router = Router();
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
-async function extractUnsubscribeLinks(raw: string, headers: Record<string, string | undefined>): Promise<string[]> {
+export async function extractUnsubscribeLinks(raw: string, headers: Record<string, string | undefined>): Promise<string[]> {
   const urls = new Set<string>();
   const headerList = headers['list-unsubscribe'];
   if (headerList) {
@@ -112,7 +112,7 @@ function suggestCategoryByKeywords(content: string): { name: string; description
   return undefined;
 }
 
-function sanitizeSummary(input?: string): string | undefined {
+export function sanitizeSummary(input?: string): string | undefined {
   if (!input) return undefined;
   let text = input.replace(/\s+/g, ' ').trim();
   const banned = /(because|indicat|fits?\s+best|given that|therefore|we (decided|classif)|classified|category|best (match|fit)|rationale|reason|this (suggests|indicates)|due to)/i;
@@ -124,7 +124,7 @@ function sanitizeSummary(input?: string): string | undefined {
 }
 
 // Very lightweight fallback summarizer when AI is unavailable.
-function simpleSummaryFromContent(content: string): string {
+export function simpleSummaryFromContent(content: string): string {
   try {
     const MAX = 180;
     const lines = (content || '')
