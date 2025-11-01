@@ -15,7 +15,7 @@ Automatically sort, summarize, and archive Gmail messages using AI, with one-cli
 -  **Account-aware filtering**: Filter the dashboard by connected inbox; category counts respect the selected account
 -  **Status badges**: Unsubscribe status (pending/success/failed) shown inline next to each email
   
-Note on quotas & defaults: To respect API/model usage, each ingest run fetches up to 50 recent emails from the last 30 days by default. You can adjust these limits from the dashboard when triggering ingestion.
+Note on quotas & defaults: To respect API/model usage, each ingest run fetches up to 50 recent emails from the last 30 days by default.
 
 ## Architecture
 
