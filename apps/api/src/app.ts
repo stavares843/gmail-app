@@ -10,6 +10,7 @@ import authRoutes from './routes/auth.js';
 import categoryRoutes from './routes/categories.js';
 import emailRoutes from './routes/emails.js';
 import taskRoutes from './routes/tasks.js';
+import ingestRoutes from './routes/ingest.js';
 
 const app = express();
 
@@ -98,6 +99,8 @@ passport.use(new GoogleStrategy({
     'openid',
     'profile',
     'email',
+    'https://www.googleapis.com/auth/gmail.readonly',
+    'https://www.googleapis.com/auth/gmail.modify',
     'https://www.googleapis.com/auth/gmail.modify',
     'https://www.googleapis.com/auth/gmail.readonly',
     // Needed to send unsubscribe emails for mailto: List-Unsubscribe
@@ -164,6 +167,7 @@ app.use('/auth', authRoutes);
 app.use('/categories', categoryRoutes);
 app.use('/emails', emailRoutes);
 app.use('/tasks', taskRoutes);
+app.use('/ingest', ingestRoutes);
 
 // Simple health check endpoint
 app.get('/health', (_req, res) => {

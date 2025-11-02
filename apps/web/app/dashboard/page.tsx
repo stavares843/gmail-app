@@ -262,7 +262,7 @@ export default function Dashboard() {
           <a className="text-blue-600 underline text-sm block mb-2" href={`${API}/auth/google`}>Connect another Gmail account</a>
           <div className="mt-3">
             <button onClick={triggerIngest} disabled={ingesting} className={clsx("px-3 py-1 text-white rounded text-sm w-full", ingesting ? 'bg-green-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700')}>{ingesting ? 'Ingesting…' : 'Ingest Emails Now'}</button>
-            <button onClick={recategorize} disabled={recategorizing} className={clsx("mt-2 px-3 py-1 text-white rounded text-sm w-full", recategorizing ? 'bg-indigo-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700')}>{recategorizing ? 'Recategorizing…' : 'Recategorize'}</button>
+            <button onClick={recategorize} disabled={recategorizing} className={clsx("mt-2 px-3 py-1 text-white rounded text-sm w-full", recategorizing ? 'bg-indigo-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700')}>{recategorizing ? 'Categorizing…' : 'Categorize'}</button>
             <p className="text-xs text-gray-500 mt-3">
               Note: Due to API quotas and model usage, each ingest run fetches up to 50 recent emails from the last 30 days by default.
             </p>
