@@ -25,6 +25,7 @@ export default function Dashboard() {
   const [emails, setEmails] = useState<Email[]>([]);
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   const [ingesting, setIngesting] = useState(false);
+  const [ingestError, setIngestError] = useState<string | null>(null);
   const [recategorizing, setRecategorizing] = useState(false);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [selectedAccountId, setSelectedAccountId] = useState<string | 'all'>('all');
@@ -163,6 +164,7 @@ export default function Dashboard() {
   async function triggerIngest() {
     try {
       setIngesting(true);
+      setIngestError(null);
       await axios.post(`${API}/tasks/ingest`, { days: 30, max: 50 }, { withCredentials: true });
       // Refresh categories with counts
       try {
@@ -192,6 +194,13 @@ export default function Dashboard() {
       }
     } catch (e: any) {
       console.error('Ingestion failed:', e.response?.data?.error || e.message);
+      if (e.response?.status === 429) {
+        setIngestError('Rate limit exceeded. Please wait a few minutes and try again.');
+      } else if (e.response?.status === 403) {
+        setIngestError('Access denied. You may need to re-authenticate with Gmail.');
+      } else {
+        setIngestError(e.response?.data?.error || 'Failed to ingest emails. Please try again.');
+      }
     }
     finally { setIngesting(false); }
   }
@@ -262,6 +271,11 @@ export default function Dashboard() {
           <a className="text-blue-600 underline text-sm block mb-2" href={`${API}/auth/google`}>Connect another Gmail account</a>
           <div className="mt-3">
             <button onClick={triggerIngest} disabled={ingesting} className={clsx("px-3 py-1 text-white rounded text-sm w-full", ingesting ? 'bg-green-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700')}>{ingesting ? 'Ingesting…' : 'Ingest Emails Now'}</button>
+            {ingestError && (
+              <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-sm text-red-600">
+                {ingestError}
+              </div>
+            )}
             <button onClick={recategorize} disabled={recategorizing} className={clsx("mt-2 px-3 py-1 text-white rounded text-sm w-full", recategorizing ? 'bg-indigo-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700')}>{recategorizing ? 'Categorizing…' : 'Categorize'}</button>
             <p className="text-xs text-gray-500 mt-3">
               Note: Due to API quotas and model usage, each ingest run fetches up to 50 recent emails from the last 30 days by default.
