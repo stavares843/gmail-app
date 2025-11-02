@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { sanitizeSummary, simpleSummaryFromContent, extractUnsubscribeLinks } from './routes/tasks';
+import { sanitizeSummary, simpleSummaryFromContent, extractUnsubscribeLinks } from './routes/tasks.js';
 
 describe('sanitizeSummary', () => {
   it('removes reasoning phrases and truncates', () => {

@@ -7,12 +7,34 @@ const router = Router();
 router.get('/google', passport.authenticate('google'));
 
 router.get('/google/callback',
-  passport.authenticate('google', { failureRedirect: '/auth/failure', session: true }),
-  (req, res) => {
-    console.log('OAuth callback - User:', (req.user as any)?.email, 'Session:', req.session?.id);
-    res.redirect((process.env.WEB_URL || 'http://localhost:3000') + '/dashboard');
+  (req, res, next) => {
+    passport.authenticate('google', (err, user) => {
+      if (err) {
+        console.error('OAuth callback error:', err);
+        if (err.name === 'TokenError') {
+          // Token error usually means expired/reused code - redirect to start fresh
+          return res.redirect('/auth/google');
+        }
+        return res.redirect('/auth/failure');
+      }
+      if (!user) return res.redirect('/auth/failure');
+      
+      req.logIn(user, (err) => {
+        if (err) {
+          console.error('Login error:', err);
+          return res.redirect('/auth/failure');
+        }
+        console.log('OAuth callback success - User:', (user as any).email);
+        res.redirect((process.env.WEB_URL || 'http://localhost:3000') + '/dashboard');
+      });
+    })(req, res, next);
   }
 );
+
+// Friendly failure page for OAuth errors
+router.get('/failure', (req, res) => {
+  res.status(500).send('Sign-in failed. If this persists, please try again in a minute or contact support.');
+});
 
 router.get('/me', (req, res) => {
   console.log('GET /auth/me - Session:', req.session?.id, 'User:', (req.user as any)?.email || 'none');

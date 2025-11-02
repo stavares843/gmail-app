@@ -6,12 +6,15 @@ import cookieParser from 'cookie-parser';
 import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import { prisma } from '@pkg/db';
-import authRoutes from './routes/auth';
-import categoryRoutes from './routes/categories';
-import emailRoutes from './routes/emails';
-import taskRoutes from './routes/tasks';
+import authRoutes from './routes/auth.js';
+import categoryRoutes from './routes/categories.js';
+import emailRoutes from './routes/emails.js';
+import taskRoutes from './routes/tasks.js';
 
 const app = express();
+
+// When running behind Fly's proxy, trust it so secure cookies work
+app.set('trust proxy', 1);
 
 // Allow common dev origins and configured WEB_URL
 const allowedOrigins = [
@@ -34,7 +37,7 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
   cookie: {
-    secure: false, // set to true in production with HTTPS
+    secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
     sameSite: 'lax'
@@ -91,6 +94,12 @@ passport.use(new GoogleStrategy({
       });
     }
 
+    // Compute token expiry as a valid Date or null
+    const expiresInSec = (params as any)?.expires_in ? Number((params as any).expires_in) : undefined;
+    const tokenExpiresAt = typeof expiresInSec === 'number' && !Number.isNaN(expiresInSec)
+      ? new Date(Date.now() + expiresInSec * 1000)
+      : null;
+
     await prisma.account.upsert({
       where: { provider_providerAccountId: { provider: 'google', providerAccountId: profile.id } },
       create: {
@@ -100,7 +109,7 @@ passport.use(new GoogleStrategy({
         accessToken,
         refreshToken: refreshToken || '',
         scope: (params as any)?.scope || '',
-        tokenExpiresAt: params?.expires_in ? new Date(Date.now() + (params.expires_in as number) * 1000) : null,
+        tokenExpiresAt,
         emailAddress: newAccountEmail
       },
       update: {
@@ -108,7 +117,7 @@ passport.use(new GoogleStrategy({
         accessToken,
         refreshToken: refreshToken || '',
         scope: (params as any)?.scope || '',
-        tokenExpiresAt: params?.expires_in ? new Date(Date.now() + (params.expires_in as number) * 1000) : null,
+        tokenExpiresAt,
         emailAddress: newAccountEmail
       }
     });
@@ -127,6 +136,18 @@ app.use('/tasks', taskRoutes);
 // Simple health check endpoint
 app.get('/health', (_req, res) => {
   res.json({ ok: true });
+});
+
+// Global error handler to log unexpected errors and return a friendly message.
+// This will catch errors from Passport/Prisma during OAuth callbacks and log the stack
+// so we can diagnose transient DB/connectivity issues without exposing internals to users.
+app.use((err: any, _req: any, res: any, _next: any) => {
+  try {
+    console.error('Unhandled error:', err && err.stack ? err.stack : err);
+  } catch (e) {
+    console.error('Error while logging error:', e);
+  }
+  res.status(500).send('Internal server error. Please try again in a moment.');
 });
 
 export default app;

@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { prisma } from '@pkg/db';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { getGmailClient } from '../utils/gmail-auth';
+import { getGmailClient } from '../utils/gmail-auth.js';
 
 const router = Router();
 
