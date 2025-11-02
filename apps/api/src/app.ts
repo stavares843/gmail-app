@@ -16,19 +16,25 @@ const app = express();
 // When running behind Fly's proxy, trust it so secure cookies work
 app.set('trust proxy', 1);
 
-// Allow common dev origins and configured WEB_URL
+// Allow Vercel frontend and local development
 const allowedOrigins = [
   process.env.WEB_URL || 'http://localhost:3000',
   'http://localhost:3000',
-  'http://localhost:3001'
+  'http://localhost:3001',
+  'https://gmail-app-ai.vercel.app'
 ];
 app.use(cors({
   origin: (origin, callback) => {
     if (!origin) return callback(null, true);
     if (allowedOrigins.includes(origin)) return callback(null, true);
-    return callback(null, false);
+    // Also allow any vercel.app subdomain for preview deployments
+    if (origin?.endsWith('.vercel.app')) return callback(null, true);
+    return callback(new Error('Not allowed by CORS'));
   },
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie', 'Set-Cookie'],
+  exposedHeaders: ['Set-Cookie']
 }));
 app.use(express.json({ limit: '5mb' }));
 app.use(cookieParser());
@@ -36,11 +42,12 @@ app.use(session({
   secret: process.env.SESSION_SECRET || 'dev-secret',
   resave: false,
   saveUninitialized: false,
+  proxy: true, // trust the reverse proxy
   cookie: {
-    secure: process.env.NODE_ENV === 'production',
+    secure: true, // Always use secure cookies
     httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    sameSite: 'lax'
+    sameSite: 'none' // Allow cross-site cookies
   }
 }));
 app.use(passport.initialize());
@@ -52,8 +59,17 @@ passport.serializeUser((user: any, done) => {
 passport.deserializeUser(async (id: string, done) => {
   try {
     const user = await prisma.user.findUnique({ where: { id } });
+    if (!user) {
+      console.error('User not found during deserialization:', id);
+      return done(null, false);
+    }
     done(null, user);
   } catch (e) {
+    console.error('Error deserializing user:', {
+      error: e,
+      stack: (e as Error).stack,
+      userId: id
+    });
     done(e as any);
   }
 });

@@ -10,7 +10,13 @@ router.get('/google/callback',
   (req, res, next) => {
     passport.authenticate('google', (err, user) => {
       if (err) {
-        console.error('OAuth callback error:', err);
+        console.error('OAuth callback error:', {
+          error: err,
+          stack: err.stack,
+          name: err.name,
+          message: err.message,
+          code: err.code
+        });
         if (err.name === 'TokenError') {
           // Token error usually means expired/reused code - redirect to start fresh
           return res.redirect('/auth/google');
@@ -21,10 +27,19 @@ router.get('/google/callback',
       
       req.logIn(user, (err) => {
         if (err) {
-          console.error('Login error:', err);
+          console.error('Login error:', {
+            error: err,
+            stack: err.stack,
+            name: err.name,
+            message: err.message,
+            sessionId: req.session?.id
+          });
           return res.redirect('/auth/failure');
         }
-        console.log('OAuth callback success - User:', (user as any).email);
+        console.log('OAuth callback success -', {
+          user: (user as any).email,
+          sessionId: req.session?.id
+        });
         res.redirect((process.env.WEB_URL || 'http://localhost:3000') + '/dashboard');
       });
     })(req, res, next);
