@@ -14,7 +14,10 @@
     "@google-cloud/local-auth": "^2.1.1",
     "@google/generative-ai": "^0.24.1",
     "@pkg/db": "workspace:*",
+    "@types/connect-pg-simple": "^7.0.3",
+    "@types/pg": "^8.15.6",
     "axios": "^1.7.7",
+    "connect-pg-simple": "^10.0.0",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
@@ -26,6 +29,7 @@
     "openai": "^4.60.0",
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
+    "pg": "^8.16.3",
     "playwright": "^1.56.1",
     "zod": "^3.23.8"
   },
@@ -39,9 +43,9 @@
     "@types/passport": "^1.0.17",
     "@types/passport-google-oauth20": "^2.0.17",
     "@types/supertest": "^6.0.2",
+    "supertest": "^7.0.0",
     "tsx": "^4.19.1",
     "typescript": "^5.6.3",
-    "vitest": "^2.1.4",
-    "supertest": "^7.0.0"
+    "vitest": "^2.1.4"
   }
 }

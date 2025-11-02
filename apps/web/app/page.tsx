@@ -35,7 +35,7 @@ export default function Home() {
           </div>
         </div>
         <p className="text-xs text-gray-500 max-w-3xl mx-auto">
-          Note: To respect API quotas and model usage, each ingest run fetches up to 50 recent emails from the last 30 days by default.
+          Note: Due to API quotas and model usage, each ingest run fetches up to 50 recent emails from the last 30 days by default.
         </p>
       </div>
     </main>

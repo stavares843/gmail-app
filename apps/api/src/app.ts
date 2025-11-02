@@ -25,29 +25,45 @@ const allowedOrigins = [
 ];
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin)) return callback(null, true);
-    // Also allow any vercel.app subdomain for preview deployments
-    if (origin?.endsWith('.vercel.app')) return callback(null, true);
-    return callback(new Error('Not allowed by CORS'));
+    console.log('Request origin:', origin);
+    if (!origin || 
+        allowedOrigins.includes(origin) || 
+        origin.endsWith('.vercel.app') || 
+        origin.endsWith('.fly.dev')) {
+      callback(null, true);
+    } else {
+      console.error('CORS blocked origin:', origin);
+      callback(new Error('Not allowed by CORS'));
+    }
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Cookie', 'Set-Cookie'],
-  exposedHeaders: ['Set-Cookie']
+  exposedHeaders: ['Set-Cookie'],
+  maxAge: 86400 // Cache CORS preflight for 24 hours
 }));
 app.use(express.json({ limit: '5mb' }));
 app.use(cookieParser());
+// Import connect-pg-simple at the top with other imports
+import pgSession from 'connect-pg-simple';
+import { Pool } from 'pg';
+
+// Create a new postgres pool
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false }
+});
+
 app.use(session({
   secret: process.env.SESSION_SECRET || 'dev-secret',
-  resave: false,
-  saveUninitialized: false,
-  proxy: true, // trust the reverse proxy
+  resave: true,
+  saveUninitialized: true,
+  proxy: true,
   cookie: {
-    secure: true, // Always use secure cookies
+    secure: true,
     httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    sameSite: 'none' // Allow cross-site cookies
+    maxAge: 24 * 60 * 60 * 1000,
+    sameSite: 'none'
   }
 }));
 app.use(passport.initialize());
