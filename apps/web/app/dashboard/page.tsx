@@ -38,13 +38,17 @@ export default function Dashboard() {
       : 'http://localhost:4000');
 
   useEffect(() => {
-    axios.get(`${API}/auth/me`, { withCredentials: true })
-      .then(r => {
-        setUser(r.data.user);
-        if (r.data.user) {
-          axios.get(`${API}/auth/accounts`, { withCredentials: true }).then((ar) => {
-            setAccounts(ar.data.accounts || []);
-          }).catch(() => {});
+    const checkAuth = async () => {
+      try {
+        const authResponse = await axios.get(`${API}/auth/me`, { withCredentials: true });
+        
+        if (authResponse.data.user) {
+          setUser(authResponse.data.user);
+          try {
+            const [accountsRes, categoriesRes] = await Promise.all([
+              axios.get(`${API}/auth/accounts`, { withCredentials: true }),
+              axios.get(`${API}/categories/with-counts`, { withCredentials: true })
+            ]);
           // initial categories load (no account filter yet, will be re-fetched below when account filter changes)
           axios.get(`${API}/categories/with-counts`, { withCredentials: true }).then(r => {
             const cats: Category[] = r.data.categories;
@@ -108,6 +112,26 @@ export default function Dashboard() {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }, [selectedCategory?.id]);
+
+  // Poll backend health so we can show a clear outage banner and disable actions
+  const [serviceHealthy, setServiceHealthy] = useState<boolean | null>(null);
+  useEffect(() => {
+    let mounted = true;
+    const check = async () => {
+      try {
+        const r = await axios.get(`${API}/health`, { withCredentials: true });
+        if (!mounted) return;
+        setServiceHealthy(r.status === 200 && r.data?.ok === true);
+      } catch (err) {
+        if (!mounted) return;
+        setServiceHealthy(false);
+      }
+    };
+    check();
+    const id = setInterval(check, 15000);
+    return () => { mounted = false; clearInterval(id); };
+  }, []);
+
   const allIds = emails.map(e => e.id);
   const selectedIds = allIds.filter(id => selected[id]);
   const allSelected = allIds.length > 0 && selectedIds.length === allIds.length;
@@ -249,6 +273,11 @@ export default function Dashboard() {
       {(ingesting || recategorizing) && (
         <div className="top-progress" style={{ width: '100%' }} />
       )}
+      {serviceHealthy === false && (
+        <div className="col-span-3 p-3 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-800">
+          Service temporarily degraded — database or backend unavailable. Actions (ingest/categorize) are disabled. Please try again in a few minutes.
+        </div>
+      )}
       <div className="col-span-1 space-y-4">
         <div className="p-4 bg-white rounded shadow">
           <h2 className="font-semibold mb-2">Account</h2>
@@ -270,7 +299,7 @@ export default function Dashboard() {
           )}
           <a className="text-blue-600 underline text-sm block mb-2" href={`${API}/auth/google`}>Connect another Gmail account</a>
           <div className="mt-3">
-            <button onClick={triggerIngest} disabled={ingesting} className={clsx("px-3 py-1 text-white rounded text-sm w-full", ingesting ? 'bg-green-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700')}>{ingesting ? 'Ingesting…' : 'Ingest Emails Now'}</button>
+            <button onClick={triggerIngest} disabled={ingesting || serviceHealthy === false} className={clsx("px-3 py-1 text-white rounded text-sm w-full", (ingesting || serviceHealthy === false) ? 'bg-green-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700')}>{ingesting ? 'Ingesting…' : 'Ingest Emails Now'}</button>
             {ingestError && (
               <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-sm text-red-600">
                 {ingestError}

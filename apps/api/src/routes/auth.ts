@@ -18,7 +18,24 @@ router.get('/failure', (req, res) => {
 
 router.get('/me', (req, res) => {
   console.log('GET /auth/me - Session:', req.session?.id, 'User:', (req.user as any)?.email || 'none');
-  res.json({ user: req.user || null });
+  
+  // Check if session exists
+  if (!req.session || !req.session.id) {
+    return res.status(401).json({ 
+      error: 'No session',
+      redirect: true
+    });
+  }
+
+  // Check if user is authenticated
+  if (!req.user) {
+    return res.status(401).json({ 
+      error: 'Not authenticated',
+      redirect: true
+    });
+  }
+
+  res.json({ user: req.user });
 });
 
 // List connected accounts for the current user

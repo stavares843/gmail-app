@@ -55,16 +55,25 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false }
 });
 
+const PgSession = pgSession(session);
+
 app.use(session({
+  store: new PgSession({
+    pool,
+    tableName: 'session',
+    createTableIfMissing: true
+  }),
   secret: process.env.SESSION_SECRET || 'dev-secret',
-  resave: true,
-  saveUninitialized: true,
+  resave: false,
+  saveUninitialized: false,
   proxy: true,
+  name: 'gmail_app_session',
   cookie: {
     secure: true,
     httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000,
-    sameSite: 'none'
+    maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+    sameSite: 'none',
+    path: '/'
   }
 }));
 app.use(passport.initialize());
@@ -170,8 +179,15 @@ app.use('/tasks', taskRoutes);
 app.use('/ingest', ingestRoutes);
 
 // Simple health check endpoint
-app.get('/health', (_req, res) => {
-  res.json({ ok: true });
+app.get('/health', async (_req, res) => {
+  try {
+    // quick DB ping
+    await prisma.$queryRaw`SELECT 1`;
+    return res.json({ ok: true });
+  } catch (e) {
+    console.error('Health check DB error:', e);
+    return res.status(503).json({ ok: false, error: 'Database unavailable' });
+  }
 });
 
 // Global error handler to log unexpected errors and return a friendly message.
@@ -183,6 +199,13 @@ app.use((err: any, _req: any, res: any, _next: any) => {
   } catch (e) {
     console.error('Error while logging error:', e);
   }
+
+  // If Prisma can't reach the database, respond with 503 so clients know it's a temporary outage
+  const isPrismaInitError = err && (err.name === 'PrismaClientInitializationError' || (err.message && err.message.includes("Can't reach database")));
+  if (isPrismaInitError) {
+    return res.status(503).json({ error: 'Database temporarily unavailable. Please try again in a moment.' });
+  }
+
   res.status(500).send('Internal server error. Please try again in a moment.');
 });
 
